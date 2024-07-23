@@ -21,30 +21,34 @@ but in the initial design this is to be avoided.
 - `(a+b)` This is not equivalent to the above, it will be three tokens `(`, `a+b`, `)`.
 
 ## Brace Splitting Pipe
-- `(variable | pred)` __:: A `Rule`, compile time assertion._
-- `[variable | variable-bindings&predicates ]` _:: A `List-builder`, order matters_
-- `{variable | variable-bindings&predicates .. optional-max-set}` _:: A `Set-Builder`, default-max-set is the All-Set_
+- `(variable | pred)` _:: A `Rule`, compile time assertion._
+- `[pattern-out | pattern-in :: variable-bindings&predicates ]` _:: A `List-builder`, a function taking a value_ (see https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/monad_comprehensions.html)
+- `{variable | variable-bindings&predicates}` _:: A `Set-Builder`, a function taking a set_
 
 ## Types Sets and values
-The type system depends on dealing with explicit sets, and an algebra between sets.
+The type system depends on dealing with explicit `Sets`, and an algebra between `Sets`.
 
-Sets `splat` into sets they are nested in.
+
+
+a set containing a type is distinct from the type itself
 ```yaml
-{{true false} maybe} = {true false maybe}
+{{true} maybe} ≠ {true false}
 ```
 A set indexed by a number is a subset of 
 
 
 Names can be created in two ways, 
-- `alias : value` :: an alias
-- `rename :- value` :: a rename
+- `alias : value`   :: an alias
+- `rename ← value` :: a rename
 
 An alias is structuraly typed
 ```yaml
 boolean : {true false}
 bool    : {true false}
+
 boolean = {true false}
 boolean = bool
+
 t : true
 bool = {t false}
 ```
@@ -56,17 +60,43 @@ with sets that are aliased, they splat into sets they have been nested into
 
 A rename wraps the type making it act like a unique value
 ```yaml
-boolean2 :- {true false}
-bool2    :- {true false}
+boolean2 ← {true false}
+bool2    ← {true false}
+
 not_(boolean2 = {true false})
 not_(boolean2 = bool2)
 ```
 
-It also no longer splats, unless pulled out
+a set can be pulled out with pattern matching
 ```yaml
-not_({bool2 maybe} = {true false maybe})
-{ bool2.?{bool2_'a :: 'a} maybe } = {true false maybe}
+not_(bool2 ∩ {maybe} = {true false maybe}
+
+(bool2_'a :: 'a )_bool2 ∩ {maybe} = {true false maybe}
+
+(boolean2_'a :: 'a)_boolean2 = (bool2_'b :: 'b)_bool2
 ```
+
+## Pattern Matching
+Pattern matching can be done by preceding braces with `?`, variables are distinguished by a preceding tick `'`.
+```
+?('a)   :# identiy function
+('a | 1 = :? 10
+ '_       :? 20
+)
+('a | 'a ∊ {1 2 3} ∊ u8 :? 0
+ '_                     :? 1
+)
+```
+
+## Function definition
+```
+id : ?('a :: 'a)
+mean : ?('a :: 'a . /_+ % #)
+
+mean`([Array:num num]:fn) : /_+ % #
+mean : /_+ % #
+```
+
 
 
 
